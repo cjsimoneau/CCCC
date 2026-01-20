@@ -353,6 +353,32 @@
         </div>
         
         <div id="mainBoard">
+            <div style="text-align: center; margin-bottom: 10px;">
+                <button onclick="toggleRules()" style="background: #28a745; padding: 8px 20px; border: none; border-radius: 5px; color: white; cursor: pointer; font-weight: bold; font-size: 0.85em;">📋 View Rules</button>
+            </div>
+            
+            <div id="rulesSection" style="display: none; background: #e7f3ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #2196F3;">
+                <h2 style="color: #1565C0; margin-bottom: 10px; font-size: 1.1em;">Game Rules</h2>
+                <div style="line-height: 1.8; font-size: 0.9em;">
+                    <p><strong>How to Play:</strong></p>
+                    <ul style="margin-left: 20px; margin-bottom: 10px;">
+                        <li>Each square costs $5</li>
+                        <li>Select a square and enter your name to claim it</li>
+                        <li>After all 100 squares are filled, the numbers 0-9 will be randomly assigned to each team</li>
+                    </ul>
+                    
+                    <p><strong>How to Win:</strong></p>
+                    <ul style="margin-left: 20px; margin-bottom: 10px;">
+                        <li>Winners are determined at the <strong>end of each quarter</strong> (1st, 2nd, 3rd, and Final)</li>
+                        <li>Look at the <strong>last digit</strong> of each team's score</li>
+                        <li>Find where those two numbers intersect on the board - that's the winning square!</li>
+                        <li>Each quarter winner receives <strong>$125</strong></li>
+                    </ul>
+                    
+                    <p><strong>Example:</strong> If at the end of the 1st quarter the score is Team 1: 14, Team 2: 7, the winning square is where "4" (Team 1) and "7" (Team 2) intersect.</p>
+                </div>
+            </div>
+            
             <div id="statusBar" class="status loading">
                 ⏳ Loading...
             </div>
@@ -398,17 +424,17 @@
                 <table id="board">
                     <thead>
                         <tr>
-                            <th class="corner">T1→<br>T2↓</th>
-                            <th id="t1-0">0</th>
-                            <th id="t1-1">1</th>
-                            <th id="t1-2">2</th>
-                            <th id="t1-3">3</th>
-                            <th id="t1-4">4</th>
-                            <th id="t1-5">5</th>
-                            <th id="t1-6">6</th>
-                            <th id="t1-7">7</th>
-                            <th id="t1-8">8</th>
-                            <th id="t1-9">9</th>
+                            <th class="corner"><span id="teamNameCorner"></span></th>
+                            <th id="t1-0">-</th>
+                            <th id="t1-1">-</th>
+                            <th id="t1-2">-</th>
+                            <th id="t1-3">-</th>
+                            <th id="t1-4">-</th>
+                            <th id="t1-5">-</th>
+                            <th id="t1-6">-</th>
+                            <th id="t1-7">-</th>
+                            <th id="t1-8">-</th>
+                            <th id="t1-9">-</th>
                         </tr>
                     </thead>
                     <tbody id="boardBody"></tbody>
@@ -436,6 +462,25 @@
     
     <script>
         // ========================================
+        // PAGE PASSWORD PROTECTION
+        // ========================================
+        const PAGE_PASSWORD = 'football2025'; // Change this to your desired password
+        
+        // Check password on page load
+        (function() {
+            const isAuthenticated = sessionStorage.getItem('boardAuth') === 'true';
+            if (!isAuthenticated) {
+                const password = prompt('Enter password to access the Super Bowl Board:');
+                if (password !== PAGE_PASSWORD) {
+                    alert('Incorrect password. Access denied.');
+                    document.body.innerHTML = '<div style="text-align:center; padding:50px; font-family:Arial;"><h1>Access Denied</h1><p>Invalid password.</p></div>';
+                    throw new Error('Access denied');
+                }
+                sessionStorage.setItem('boardAuth', 'true');
+            }
+        })();
+        
+        // ========================================
         // CONFIGURATION
         // After first setup, paste these values here:
         // ========================================
@@ -443,11 +488,20 @@
         let BIN_ID = '';  // Your BIN ID (you'll get this after initialization)
         let ADMIN_PASSWORD = 'MyNelnetBoard$123'; // Change this
         
+        // Team names - edit these for your Super Bowl teams
+        let TEAM1_NAME = 'Denver Broncos'; // Top row team
+        let TEAM2_NAME = 'Seattle Seahawks'; // Left column team
+        
         const BASE_URL = 'https://api.jsonbin.io/v3';
         
         let boardData = {};
         let selectedSquare = null;
         let numbers = { team1: [], team2: [] };
+        
+        function toggleRules() {
+            const rules = document.getElementById('rulesSection');
+            rules.style.display = rules.style.display === 'none' ? 'block' : 'none';
+        }
         
         // Check if already configured
         window.onload = function() {
@@ -571,12 +625,15 @@
             const tbody = document.getElementById('boardBody');
             tbody.innerHTML = '';
             
+            // Set team names in corner
+            document.getElementById('teamNameCorner').innerHTML = `${TEAM1_NAME} →<br>↓ ${TEAM2_NAME}`;
+            
             for (let row = 0; row < 10; row++) {
                 const tr = document.createElement('tr');
                 
                 const rowLabel = document.createElement('td');
                 rowLabel.className = 'row-label';
-                rowLabel.textContent = row;
+                rowLabel.textContent = '-'; // Start blank
                 rowLabel.id = `t2-${row}`;
                 tr.appendChild(rowLabel);
                 
@@ -690,10 +747,17 @@
                 return;
             }
             
-            if (!confirm('RESET ALL DATA?')) return;
+            if (!confirm('RESET ALL DATA? This will clear all squares AND numbers!')) return;
             
             boardData = {};
             numbers = { team1: [], team2: [] };
+            
+            // Clear the number displays
+            for (let i = 0; i < 10; i++) {
+                document.getElementById(`t1-${i}`).textContent = '-';
+                document.getElementById(`t2-${i}`).textContent = '-';
+            }
+            
             await saveBoard();
             document.getElementById('adminPassword').value = '';
         }
@@ -706,15 +770,25 @@
             let totalClaimed = 0;
             let totalPaid = 0;
             
-            if (numbers.team1.length === 10) {
+            // Update numbers ONLY if they've been randomized
+            if (numbers.team1 && numbers.team1.length === 10) {
                 numbers.team1.forEach((num, idx) => {
                     document.getElementById(`t1-${idx}`).textContent = num;
                 });
+            } else {
+                for (let i = 0; i < 10; i++) {
+                    document.getElementById(`t1-${i}`).textContent = '-';
+                }
             }
-            if (numbers.team2.length === 10) {
+            
+            if (numbers.team2 && numbers.team2.length === 10) {
                 numbers.team2.forEach((num, idx) => {
                     document.getElementById(`t2-${idx}`).textContent = num;
                 });
+            } else {
+                for (let i = 0; i < 10; i++) {
+                    document.getElementById(`t2-${i}`).textContent = '-';
+                }
             }
             
             for (let row = 0; row < 10; row++) {
