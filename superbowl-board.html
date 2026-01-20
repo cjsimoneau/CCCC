@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Bowl Squares Board</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            height: 100%;
+            min-height: 1800px;
+            overflow-y: auto;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: white;
+            padding: 10px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            min-height: 1700px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #1e3c72;
+            margin: 10px 0 5px 0;
+            font-size: 1.4em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 0.85em;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .stat-card {
+            background: #667eea;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-align: center;
+            min-width: 110px;
+        }
+        
+        .stat-card .label {
+            font-size: 0.75em;
+            opacity: 0.9;
+        }
+        
+        .stat-card .value {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin: 10px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        input[type="text"] {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.85em;
+            width: 180px;
+        }
+        
+        button {
+            padding: 8px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background: #5568d3;
+        }
+        
+        button.secondary {
+            background: #11998e;
+        }
+        
+        button.danger {
+            background: #eb3349;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 10px 0;
+            font-size: 0.8em;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .legend-box {
+            width: 22px;
+            height: 22px;
+            border-radius: 3px;
+            border: 2px solid #ddd;
+        }
+        
+        /* BOARD TABLE */
+        .board-wrapper {
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        
+        table {
+            border-collapse: collapse;
+            margin: 0 auto;
+            background: white;
+            width: 100%;
+            max-width: 850px;
+        }
+        
+        td, th {
+            border: 2px solid #ccc;
+            text-align: center;
+            width: 65px;
+            height: 65px;
+            font-size: 0.7em;
+            padding: 3px;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+        
+        th.corner {
+            background: #2a5298;
+            font-size: 0.65em;
+        }
+        
+        td.square {
+            cursor: pointer;
+            background: white;
+            transition: background 0.2s;
+        }
+        
+        td.square:hover {
+            background: #f0f0f0;
+        }
+        
+        td.square.claimed {
+            background: #38ef7d;
+            color: white;
+            font-weight: bold;
+        }
+        
+        td.square.paid {
+            background: #f5576c;
+            color: white;
+            font-weight: bold;
+        }
+        
+        td.square.selected {
+            outline: 4px solid #1e3c72;
+            outline-offset: -4px;
+        }
+        
+        td.row-label {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+        
+        .participants {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .participants h2 {
+            color: #1e3c72;
+            margin-bottom: 8px;
+            font-size: 1em;
+        }
+        
+        .participant-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 8px;
+        }
+        
+        .participant {
+            padding: 8px;
+            background: white;
+            border-radius: 3px;
+            border-left: 3px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+        }
+        
+        .participant.paid {
+            border-left-color: #f5576c;
+        }
+        
+        .spacer {
+            height: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏈 Super Bowl Squares Board 🏈</h1>
+        <p class="subtitle">$5 per Square | $125 Prize per Quarter</p>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="label">Claimed</div>
+                <div class="value" id="totalSquares">0/100</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Paid</div>
+                <div class="value" id="squaresPaid">0/100</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Collected</div>
+                <div class="value" id="totalMoney">$0/$500</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <input type="text" id="nameInput" placeholder="Enter your name">
+            <button onclick="claimSquare()">Claim</button>
+            <button class="secondary" onclick="togglePaid()">Mark Paid</button>
+            <button class="danger" onclick="removeSquare()">Remove</button>
+            <button onclick="randomizeNumbers()">Randomize</button>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-box" style="background: white;"></div>
+                <span>Available</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box" style="background: #38ef7d;"></div>
+                <span>Claimed</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box" style="background: #f5576c;"></div>
+                <span>Paid</span>
+            </div>
+        </div>
+        
+        <div class="board-wrapper">
+            <table id="board">
+                <thead>
+                    <tr>
+                        <th class="corner">T1→<br>T2↓</th>
+                        <th id="t1-0">0</th>
+                        <th id="t1-1">1</th>
+                        <th id="t1-2">2</th>
+                        <th id="t1-3">3</th>
+                        <th id="t1-4">4</th>
+                        <th id="t1-5">5</th>
+                        <th id="t1-6">6</th>
+                        <th id="t1-7">7</th>
+                        <th id="t1-8">8</th>
+                        <th id="t1-9">9</th>
+                    </tr>
+                </thead>
+                <tbody id="boardBody">
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="participants">
+            <h2>Participants (<span id="participantCount">0</span>)</h2>
+            <div class="participant-grid" id="participantList"></div>
+        </div>
+        
+        <div class="spacer"></div>
+    </div>
+    
+    <script>
+        let boardData = {};
+        let selectedSquare = null;
+        
+        function initBoard() {
+            const tbody = document.getElementById('boardBody');
+            tbody.innerHTML = '';
+            
+            for (let row = 0; row < 10; row++) {
+                const tr = document.createElement('tr');
+                
+                // Row label
+                const rowLabel = document.createElement('td');
+                rowLabel.className = 'row-label';
+                rowLabel.textContent = row;
+                rowLabel.id = `t2-${row}`;
+                tr.appendChild(rowLabel);
+                
+                // Squares
+                for (let col = 0; col < 10; col++) {
+                    const td = document.createElement('td');
+                    td.className = 'square';
+                    td.dataset.row = row;
+                    td.dataset.col = col;
+                    td.onclick = () => selectSquare(row, col);
+                    tr.appendChild(td);
+                }
+                
+                tbody.appendChild(tr);
+            }
+            
+            loadData();
+            updateBoard();
+        }
+        
+        function selectSquare(row, col) {
+            document.querySelectorAll('.square').forEach(sq => {
+                sq.classList.remove('selected');
+            });
+            
+            selectedSquare = { row, col };
+            const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            square.classList.add('selected');
+            
+            const key = `${row}-${col}`;
+            if (boardData[key]) {
+                document.getElementById('nameInput').value = boardData[key].name;
+            } else {
+                document.getElementById('nameInput').focus();
+            }
+        }
+        
+        function claimSquare() {
+            if (!selectedSquare) {
+                alert('Please select a square first');
+                return;
+            }
+            
+            const name = document.getElementById('nameInput').value.trim();
+            if (!name) {
+                alert('Please enter your name');
+                return;
+            }
+            
+            const key = `${selectedSquare.row}-${selectedSquare.col}`;
+            boardData[key] = { name, paid: false };
+            
+            saveData();
+            updateBoard();
+            document.getElementById('nameInput').value = '';
+            selectedSquare = null;
+        }
+        
+        function togglePaid() {
+            if (!selectedSquare) {
+                alert('Please select a square first');
+                return;
+            }
+            
+            const key = `${selectedSquare.row}-${selectedSquare.col}`;
+            if (boardData[key]) {
+                boardData[key].paid = !boardData[key].paid;
+                saveData();
+                updateBoard();
+            } else {
+                alert('This square is not claimed yet');
+            }
+        }
+        
+        function removeSquare() {
+            if (!selectedSquare) {
+                alert('Please select a square first');
+                return;
+            }
+            
+            const key = `${selectedSquare.row}-${selectedSquare.col}`;
+            if (boardData[key]) {
+                if (confirm(`Remove ${boardData[key].name}?`)) {
+                    delete boardData[key];
+                    saveData();
+                    updateBoard();
+                    selectedSquare = null;
+                }
+            }
+        }
+        
+        function updateBoard() {
+            let totalClaimed = 0;
+            let totalPaid = 0;
+            
+            for (let row = 0; row < 10; row++) {
+                for (let col = 0; col < 10; col++) {
+                    const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                    if (!square) continue;
+                    
+                    const key = `${row}-${col}`;
+                    
+                    if (boardData[key]) {
+                        totalClaimed++;
+                        square.textContent = boardData[key].name;
+                        square.className = 'square ' + (boardData[key].paid ? 'paid' : 'claimed');
+                        if (boardData[key].paid) totalPaid++;
+                    } else {
+                        square.textContent = '';
+                        square.className = 'square';
+                    }
+                    
+                    if (selectedSquare && selectedSquare.row === row && selectedSquare.col === col) {
+                        square.classList.add('selected');
+                    }
+                }
+            }
+            
+            document.getElementById('totalSquares').textContent = `${totalClaimed}/100`;
+            document.getElementById('squaresPaid').textContent = `${totalPaid}/100`;
+            document.getElementById('totalMoney').textContent = `$${totalPaid * 5}/$500`;
+            
+            updateParticipantList();
+        }
+        
+        function updateParticipantList() {
+            const participants = {};
+            
+            Object.values(boardData).forEach(data => {
+                if (!participants[data.name]) {
+                    participants[data.name] = { claimed: 0, paid: 0 };
+                }
+                participants[data.name].claimed++;
+                if (data.paid) participants[data.name].paid++;
+            });
+            
+            const list = document.getElementById('participantList');
+            list.innerHTML = '';
+            
+            const sorted = Object.entries(participants).sort((a, b) => b[1].claimed - a[1].claimed);
+            
+            sorted.forEach(([name, stats]) => {
+                const div = document.createElement('div');
+                div.className = 'participant' + (stats.paid === stats.claimed && stats.claimed > 0 ? ' paid' : '');
+                div.innerHTML = `
+                    <span><strong>${name}</strong></span>
+                    <span>${stats.claimed} sq (${stats.paid} paid)</span>
+                `;
+                list.appendChild(div);
+            });
+            
+            document.getElementById('participantCount').textContent = sorted.length;
+        }
+        
+        function randomizeNumbers() {
+            if (!confirm('Randomize numbers? Only do once all squares are filled!')) {
+                return;
+            }
+            
+            const numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+            
+            const team1 = [...numbers].sort(() => Math.random() - 0.5);
+            team1.forEach((num, idx) => {
+                document.getElementById(`t1-${idx}`).textContent = num;
+            });
+            
+            const team2 = [...numbers].sort(() => Math.random() - 0.5);
+            team2.forEach((num, idx) => {
+                document.getElementById(`t2-${idx}`).textContent = num;
+            });
+            
+            alert('Numbers randomized!');
+        }
+        
+        function saveData() {
+            localStorage.setItem('superbowlBoard', JSON.stringify(boardData));
+        }
+        
+        function loadData() {
+            const saved = localStorage.getItem('superbowlBoard');
+            if (saved) {
+                boardData = JSON.parse(saved);
+            }
+        }
+        
+        initBoard();
+    </script>
+</body>
+</html>
