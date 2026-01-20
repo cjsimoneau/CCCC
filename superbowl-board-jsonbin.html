@@ -304,6 +304,32 @@
             border-left-color: #f5576c;
         }
         
+        .winner-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #28a745;
+        }
+        
+        .winner-card h4 {
+            color: #155724;
+            margin-bottom: 8px;
+            font-size: 1em;
+        }
+        
+        .winner-card .score {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #1e3c72;
+            margin-bottom: 8px;
+        }
+        
+        .winner-card .winner-name {
+            font-size: 1.1em;
+            color: #28a745;
+            font-weight: bold;
+        }
+        
         .admin-section {
             margin-top: 15px;
             padding: 12px;
@@ -334,7 +360,7 @@
 <body>
     <div class="container">
         <h1>🏈 Super Bowl Squares Board 🏈</h1>
-        <p class="subtitle">$5 per Square | $125 Prize per Quarter</p>
+        <p class="subtitle">$5 per Square | 50/50 Payout: Half to Winners, Half to Charity</p>
         
         <div id="setupSection" class="setup-box">
             <h2>⚙️ Quick Setup (One-Time Only)</h2>
@@ -353,6 +379,39 @@
         </div>
         
         <div id="mainBoard">
+            <div style="text-align: center; margin-bottom: 10px;">
+                <button onclick="toggleRules()" style="background: #28a745; padding: 8px 20px; border: none; border-radius: 5px; color: white; cursor: pointer; font-weight: bold; font-size: 0.85em;">📋 View Rules</button>
+            </div>
+            
+            <div id="rulesSection" style="display: none; background: #e7f3ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #2196F3;">
+                <h2 style="color: #1565C0; margin-bottom: 10px; font-size: 1.1em;">Game Rules</h2>
+                <div style="line-height: 1.8; font-size: 0.9em;">
+                    <p><strong>How to Play:</strong></p>
+                    <ul style="margin-left: 20px; margin-bottom: 10px;">
+                        <li>Each square costs $5</li>
+                        <li>Select a square and enter your name to claim it</li>
+                        <li>After all 100 squares are filled, the numbers 0-9 will be randomly assigned to each team</li>
+                    </ul>
+                    
+                    <p><strong>How to Win:</strong></p>
+                    <ul style="margin-left: 20px; margin-bottom: 10px;">
+                        <li>Winners are determined at the <strong>end of each quarter</strong> (1st, 2nd, 3rd, and Final)</li>
+                        <li>Look at the <strong>last digit</strong> of each team's score</li>
+                        <li>Find where those two numbers intersect on the board - that's the winning square!</li>
+                        <li>Each quarter winner receives <strong>$62.50</strong> (50/50 split)</li>
+                    </ul>
+                    
+                    <p><strong>Payout Structure (50/50):</strong></p>
+                    <ul style="margin-left: 20px; margin-bottom: 10px;">
+                        <li>Total pot: <strong>$500</strong> (100 squares × $5)</li>
+                        <li>Winners receive: <strong>$250 total</strong> ($62.50 per quarter)</li>
+                        <li>Charity receives: <strong>$250 total</strong></li>
+                    </ul>
+                    
+                    <p><strong>Example:</strong> If at the end of the 1st quarter the score is Team 1: 14, Team 2: 7, the winning square is where "4" (Team 1) and "7" (Team 2) intersect. Winner gets $62.50!</p>
+                </div>
+            </div>
+            
             <div id="statusBar" class="status loading">
                 ⏳ Loading...
             </div>
@@ -367,8 +426,16 @@
                     <div class="value" id="squaresPaid">0/100</div>
                 </div>
                 <div class="stat-card">
-                    <div class="label">Collected</div>
+                    <div class="label">Total Collected</div>
                     <div class="value" id="totalMoney">$0/$500</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">To Winners</div>
+                    <div class="value" id="winnerMoney">$0/$250</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">To Charity</div>
+                    <div class="value" id="charityMoney">$0/$250</div>
                 </div>
             </div>
             
@@ -398,17 +465,17 @@
                 <table id="board">
                     <thead>
                         <tr>
-                            <th class="corner">T1→<br>T2↓</th>
-                            <th id="t1-0">0</th>
-                            <th id="t1-1">1</th>
-                            <th id="t1-2">2</th>
-                            <th id="t1-3">3</th>
-                            <th id="t1-4">4</th>
-                            <th id="t1-5">5</th>
-                            <th id="t1-6">6</th>
-                            <th id="t1-7">7</th>
-                            <th id="t1-8">8</th>
-                            <th id="t1-9">9</th>
+                            <th class="corner"><span id="teamNameCorner"></span></th>
+                            <th id="t1-0">-</th>
+                            <th id="t1-1">-</th>
+                            <th id="t1-2">-</th>
+                            <th id="t1-3">-</th>
+                            <th id="t1-4">-</th>
+                            <th id="t1-5">-</th>
+                            <th id="t1-6">-</th>
+                            <th id="t1-7">-</th>
+                            <th id="t1-8">-</th>
+                            <th id="t1-9">-</th>
                         </tr>
                     </thead>
                     <tbody id="boardBody"></tbody>
@@ -428,6 +495,84 @@
                     <button class="admin" onclick="randomizeNumbers()">Randomize Numbers</button>
                     <button class="danger" onclick="resetBoard()">Reset Board</button>
                 </div>
+                
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #ddd;">
+                    <h3 style="margin-bottom: 10px;">📊 Enter Quarter Scores</h3>
+                    <p style="font-size: 0.85em; margin-bottom: 10px; color: #666;">Enter the score at the end of each quarter to automatically determine winners.</p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+                        <!-- 1st Quarter -->
+                        <div style="background: white; padding: 12px; border-radius: 5px; border: 2px solid #ddd;">
+                            <h4 style="margin-bottom: 8px; color: #1e3c72;">1st Quarter</h4>
+                            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px;">
+                                <span style="font-size: 0.85em; width: 80px;" id="team1Label1">Team 1:</span>
+                                <input type="number" id="q1team1" min="0" max="99" style="width: 60px; padding: 5px;" placeholder="0">
+                            </div>
+                            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 0.85em; width: 80px;" id="team2Label1">Team 2:</span>
+                                <input type="number" id="q1team2" min="0" max="99" style="width: 60px; padding: 5px;" placeholder="0">
+                            </div>
+                            <button class="admin" onclick="submitScore('q1')" style="width: 100%;">Submit Q1</button>
+                            <div id="q1winner" style="margin-top: 8px; font-weight: bold; color: #28a745; font-size: 0.85em;"></div>
+                        </div>
+                        
+                        <!-- 2nd Quarter / Halftime -->
+                        <div style="background: white; padding: 12px; border-radius: 5px; border: 2px solid #ddd;">
+                            <h4 style="margin-bottom: 8px; color: #1e3c72;">2nd Quarter (Halftime)</h4>
+                            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px;">
+                                <span style="font-size: 0.85em; width: 80px;" id="team1Label2">Team 1:</span>
+                                <input type="number" id="q2team1" min="0" max="99" style="width: 60px; padding: 5px;" placeholder="0">
+                            </div>
+                            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 0.85em; width: 80px;" id="team2Label2">Team 2:</span>
+                                <input type="number" id="q2team2" min="0" max="99" style="width: 60px; padding: 5px;" placeholder="0">
+                            </div>
+                            <button class="admin" onclick="submitScore('q2')" style="width: 100%;">Submit Q2</button>
+                            <div id="q2winner" style="margin-top: 8px; font-weight: bold; color: #28a745; font-size: 0.85em;"></div>
+                        </div>
+                        
+                        <!-- 3rd Quarter -->
+                        <div style="background: white; padding: 12px; border-radius: 5px; border: 2px solid #ddd;">
+                            <h4 style="margin-bottom: 8px; color: #1e3c72;">3rd Quarter</h4>
+                            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px;">
+                                <span style="font-size: 0.85em; width: 80px;" id="team1Label3">Team 1:</span>
+                                <input type="number" id="q3team1" min="0" max="99" style="width: 60px; padding: 5px;" placeholder="0">
+                            </div>
+                            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 0.85em; width: 80px;" id="team2Label3">Team 2:</span>
+                                <input type="number" id="q3team2" min="0" max="99" style="width: 60px; padding: 5px;" placeholder="0">
+                            </div>
+                            <button class="admin" onclick="submitScore('q3')" style="width: 100%;">Submit Q3</button>
+                            <div id="q3winner" style="margin-top: 8px; font-weight: bold; color: #28a745; font-size: 0.85em;"></div>
+                        </div>
+                        
+                        <!-- Final -->
+                        <div style="background: white; padding: 12px; border-radius: 5px; border: 2px solid #ddd;">
+                            <h4 style="margin-bottom: 8px; color: #1e3c72;">Final Score</h4>
+                            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px;">
+                                <span style="font-size: 0.85em; width: 80px;" id="team1Label4">Team 1:</span>
+                                <input type="number" id="finalteam1" min="0" max="99" style="width: 60px; padding: 5px;" placeholder="0">
+                            </div>
+                            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 0.85em; width: 80px;" id="team2Label4">Team 2:</span>
+                                <input type="number" id="finalteam2" min="0" max="99" style="width: 60px; padding: 5px;" placeholder="0">
+                            </div>
+                            <button class="admin" onclick="submitScore('final')" style="width: 100%;">Submit Final</button>
+                            <div id="finalwinner" style="margin-top: 8px; font-weight: bold; color: #28a745; font-size: 0.85em;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Winners Display Section -->
+            <div id="winnersSection" style="display: none; margin-top: 20px; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+                <h2 style="color: #155724; margin-bottom: 15px; font-size: 1.2em;">🏆 Quarter Winners</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div id="winner-q1" class="winner-card"></div>
+                    <div id="winner-q2" class="winner-card"></div>
+                    <div id="winner-q3" class="winner-card"></div>
+                    <div id="winner-final" class="winner-card"></div>
+                </div>
             </div>
         </div>
         
@@ -436,21 +581,60 @@
     
     <script>
         // ========================================
+        // PAGE PASSWORD PROTECTION
+        // ========================================
+        const PAGE_PASSWORD = 'football2025'; // Change this to your desired password
+        
+        // Check password on page load
+        (function() {
+            const isAuthenticated = sessionStorage.getItem('boardAuth') === 'true';
+            if (!isAuthenticated) {
+                const password = prompt('Enter password to access the Super Bowl Board:');
+                if (password !== PAGE_PASSWORD) {
+                    alert('Incorrect password. Access denied.');
+                    document.body.innerHTML = '<div style="text-align:center; padding:50px; font-family:Arial;"><h1>Access Denied</h1><p>Invalid password.</p></div>';
+                    throw new Error('Access denied');
+                }
+                sessionStorage.setItem('boardAuth', 'true');
+            }
+        })();
+        
+        // ========================================
         // CONFIGURATION
         // After first setup, paste these values here:
         // ========================================
         let API_KEY = '$2a$10$4X2nAN06EmA87/Tb6mz3NOP9vdVRqisYHNuqj48mhLi/C6IV6Ac4m'; // Your JSONBin API key
-        let BIN_ID = '696fece4ae596e708fe98d7f';  // Your BIN ID (you'll get this after initialization)
+        let BIN_ID = '';  // Your BIN ID (you'll get this after initialization)
         let ADMIN_PASSWORD = 'MyNelnetBoard$123'; // Change this
+        
+        // Team names - edit these for your Super Bowl teams
+        let TEAM1_NAME = 'Denver Broncos'; // Top row team
+        let TEAM2_NAME = 'Seattle Seahawks'; // Left column team
         
         const BASE_URL = 'https://api.jsonbin.io/v3';
         
         let boardData = {};
         let selectedSquare = null;
         let numbers = { team1: [], team2: [] };
+        let scores = {
+            q1: { team1: null, team2: null, winner: null },
+            q2: { team1: null, team2: null, winner: null },
+            q3: { team1: null, team2: null, winner: null },
+            final: { team1: null, team2: null, winner: null }
+        };
+        
+        function toggleRules() {
+            const rules = document.getElementById('rulesSection');
+            rules.style.display = rules.style.display === 'none' ? 'block' : 'none';
+        }
         
         // Check if already configured
         window.onload = function() {
+            // Check if values are in code OR localStorage
+            if (!API_KEY) API_KEY = localStorage.getItem('apiKey') || '';
+            if (!BIN_ID) BIN_ID = localStorage.getItem('binId') || '';
+            if (!ADMIN_PASSWORD) ADMIN_PASSWORD = localStorage.getItem('adminPassword') || 'superbowl2025';
+            
             if (API_KEY && BIN_ID) {
                 document.getElementById('setupSection').style.display = 'none';
                 document.getElementById('mainBoard').classList.add('ready');
@@ -481,6 +665,12 @@
                     body: JSON.stringify({
                         boardData: {},
                         numbers: { team1: [], team2: [] },
+                        scores: {
+                            q1: { team1: null, team2: null, winner: null },
+                            q2: { team1: null, team2: null, winner: null },
+                            q3: { team1: null, team2: null, winner: null },
+                            final: { team1: null, team2: null, winner: null }
+                        },
                         adminPassword: ADMIN_PASSWORD
                     })
                 });
@@ -490,7 +680,12 @@
                 if (result.metadata && result.metadata.id) {
                     BIN_ID = result.metadata.id;
                     
-                    alert(`Success! Your board is ready!\n\nBIN ID: ${BIN_ID}\n\nIMPORTANT: Open the HTML file in a text editor and add these values:\n\nAPI_KEY = '${API_KEY}';\nBIN_ID = '${BIN_ID}';\nADMIN_PASSWORD = '${ADMIN_PASSWORD}';\n\nThen re-upload to GitHub Pages.`);
+                    // Save to localStorage so it persists
+                    localStorage.setItem('apiKey', API_KEY);
+                    localStorage.setItem('binId', BIN_ID);
+                    localStorage.setItem('adminPassword', ADMIN_PASSWORD);
+                    
+                    alert(`Success! Your board is ready and will stay configured!\n\nYour BIN ID: ${BIN_ID}\n\nOptional: To make this permanent across browsers, open the HTML file and add:\n\nAPI_KEY = '${API_KEY}';\nBIN_ID = '${BIN_ID}';\nADMIN_PASSWORD = '${ADMIN_PASSWORD}';`);
                     
                     document.getElementById('setupSection').style.display = 'none';
                     document.getElementById('mainBoard').classList.add('ready');
@@ -521,11 +716,18 @@
                 const result = await response.json();
                 boardData = result.record.boardData || {};
                 numbers = result.record.numbers || { team1: [], team2: [] };
+                scores = result.record.scores || {
+                    q1: { team1: null, team2: null, winner: null },
+                    q2: { team1: null, team2: null, winner: null },
+                    q3: { team1: null, team2: null, winner: null },
+                    final: { team1: null, team2: null, winner: null }
+                };
                 
                 document.getElementById('statusBar').innerHTML = '✅ Connected';
                 document.getElementById('statusBar').className = 'status connected';
                 
                 updateBoard();
+                updateScoreDisplay();
             } catch (error) {
                 document.getElementById('statusBar').innerHTML = '❌ Error: ' + error.message;
                 document.getElementById('statusBar').className = 'status error';
@@ -545,6 +747,7 @@
                     body: JSON.stringify({
                         boardData,
                         numbers,
+                        scores,
                         adminPassword: ADMIN_PASSWORD
                     })
                 });
@@ -561,12 +764,21 @@
             const tbody = document.getElementById('boardBody');
             tbody.innerHTML = '';
             
+            // Set team names in corner
+            document.getElementById('teamNameCorner').innerHTML = `${TEAM1_NAME} →<br>↓ ${TEAM2_NAME}`;
+            
+            // Set team names in score entry labels
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`team1Label${i}`).textContent = `${TEAM1_NAME}:`;
+                document.getElementById(`team2Label${i}`).textContent = `${TEAM2_NAME}:`;
+            }
+            
             for (let row = 0; row < 10; row++) {
                 const tr = document.createElement('tr');
                 
                 const rowLabel = document.createElement('td');
                 rowLabel.className = 'row-label';
-                rowLabel.textContent = row;
+                rowLabel.textContent = '-'; // Start blank
                 rowLabel.id = `t2-${row}`;
                 tr.appendChild(rowLabel);
                 
@@ -680,10 +892,30 @@
                 return;
             }
             
-            if (!confirm('RESET ALL DATA?')) return;
+            if (!confirm('RESET ALL DATA? This will clear all squares, numbers, AND scores!')) return;
             
             boardData = {};
             numbers = { team1: [], team2: [] };
+            scores = {
+                q1: { team1: null, team2: null, winner: null },
+                q2: { team1: null, team2: null, winner: null },
+                q3: { team1: null, team2: null, winner: null },
+                final: { team1: null, team2: null, winner: null }
+            };
+            
+            // Clear the number displays
+            for (let i = 0; i < 10; i++) {
+                document.getElementById(`t1-${i}`).textContent = '-';
+                document.getElementById(`t2-${i}`).textContent = '-';
+            }
+            
+            // Clear score inputs
+            ['q1', 'q2', 'q3', 'final'].forEach(quarter => {
+                document.getElementById(`${quarter}team1`).value = '';
+                document.getElementById(`${quarter}team2`).value = '';
+                document.getElementById(`${quarter}winner`).innerHTML = '';
+            });
+            
             await saveBoard();
             document.getElementById('adminPassword').value = '';
         }
@@ -696,15 +928,25 @@
             let totalClaimed = 0;
             let totalPaid = 0;
             
-            if (numbers.team1.length === 10) {
+            // Update numbers ONLY if they've been randomized
+            if (numbers.team1 && numbers.team1.length === 10) {
                 numbers.team1.forEach((num, idx) => {
                     document.getElementById(`t1-${idx}`).textContent = num;
                 });
+            } else {
+                for (let i = 0; i < 10; i++) {
+                    document.getElementById(`t1-${i}`).textContent = '-';
+                }
             }
-            if (numbers.team2.length === 10) {
+            
+            if (numbers.team2 && numbers.team2.length === 10) {
                 numbers.team2.forEach((num, idx) => {
                     document.getElementById(`t2-${idx}`).textContent = num;
                 });
+            } else {
+                for (let i = 0; i < 10; i++) {
+                    document.getElementById(`t2-${i}`).textContent = '-';
+                }
             }
             
             for (let row = 0; row < 10; row++) {
@@ -734,7 +976,92 @@
             document.getElementById('squaresPaid').textContent = `${totalPaid}/100`;
             document.getElementById('totalMoney').textContent = `$${totalPaid * 5}/$500`;
             
+            // Calculate 50/50 split
+            const totalCollected = totalPaid * 5;
+            const halfAmount = Math.floor(totalCollected / 2);
+            document.getElementById('winnerMoney').textContent = `$${halfAmount}/$250`;
+            document.getElementById('charityMoney').textContent = `$${halfAmount}/$250`;
+            
             updateParticipantList();
+        }
+        
+        async function submitScore(quarter) {
+            const password = document.getElementById('adminPassword').value;
+            if (password !== ADMIN_PASSWORD) {
+                alert('Please enter admin password first');
+                return;
+            }
+            
+            // Check if numbers have been randomized
+            if (!numbers.team1 || numbers.team1.length !== 10 || !numbers.team2 || numbers.team2.length !== 10) {
+                alert('Please randomize numbers before entering scores!');
+                return;
+            }
+            
+            const team1Score = parseInt(document.getElementById(`${quarter}team1`).value);
+            const team2Score = parseInt(document.getElementById(`${quarter}team2`).value);
+            
+            if (isNaN(team1Score) || isNaN(team2Score)) {
+                alert('Please enter valid scores');
+                return;
+            }
+            
+            // Get last digits
+            const team1Digit = team1Score % 10;
+            const team2Digit = team2Score % 10;
+            
+            // Find the winning square
+            const team1Index = numbers.team1.indexOf(team1Digit);
+            const team2Index = numbers.team2.indexOf(team2Digit);
+            
+            const winningKey = `${team2Index}-${team1Index}`;
+            const winnerData = boardData[winningKey];
+            
+            scores[quarter] = {
+                team1: team1Score,
+                team2: team2Score,
+                winner: winnerData ? winnerData.name : 'Unclaimed Square',
+                winningSquare: `${TEAM1_NAME}: ${team1Digit}, ${TEAM2_NAME}: ${team2Digit}`
+            };
+            
+            await saveBoard();
+            
+            const quarterName = quarter === 'final' ? 'Final' : quarter.toUpperCase();
+            alert(`${quarterName} winner: ${scores[quarter].winner} - $62.50!`);
+        }
+        
+        function updateScoreDisplay() {
+            let hasWinners = false;
+            
+            ['q1', 'q2', 'q3', 'final'].forEach(quarter => {
+                if (scores[quarter] && scores[quarter].team1 !== null) {
+                    hasWinners = true;
+                    
+                    const quarterName = quarter === 'final' ? 'Final' : 
+                                       quarter === 'q1' ? '1st Quarter' :
+                                       quarter === 'q2' ? '2nd Quarter (Halftime)' :
+                                       '3rd Quarter';
+                    
+                    // Update input fields
+                    document.getElementById(`${quarter}team1`).value = scores[quarter].team1;
+                    document.getElementById(`${quarter}team2`).value = scores[quarter].team2;
+                    
+                    // Show winner in score entry area
+                    document.getElementById(`${quarter}winner`).innerHTML = 
+                        `✅ Winner: <strong>${scores[quarter].winner}</strong><br>${scores[quarter].winningSquare}`;
+                    
+                    // Update winners section
+                    document.getElementById(`winner-${quarter}`).innerHTML = `
+                        <h4>${quarterName}</h4>
+                        <div class="score">${TEAM1_NAME}: ${scores[quarter].team1} - ${TEAM2_NAME}: ${scores[quarter].team2}</div>
+                        <div class="winner-name">🏆 ${scores[quarter].winner} - $62.50</div>
+                        <div style="font-size: 0.85em; color: #666; margin-top: 5px;">${scores[quarter].winningSquare}</div>
+                    `;
+                }
+            });
+            
+            // Show/hide winners section
+            document.getElementById('winnersSection').style.display = hasWinners ? 'block' : 'none';
         }
         
         function updateParticipantList() {
