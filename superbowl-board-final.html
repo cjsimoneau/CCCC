@@ -936,7 +936,7 @@
             const key = `${row}-${col}`;
             const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
             
-            // If square is claimed, auto-fill name but still allow selection
+            // If square is claimed, auto-fill name (read-only for non-admins)
             if (boardData[key]) {
                 document.getElementById('nameInput').value = boardData[key].name;
             }
@@ -978,11 +978,36 @@
                 return;
             }
             
+            // Check if any selected squares are already claimed (non-admin users can't change names)
+            if (!isAdminLoggedIn) {
+                const alreadyClaimed = selectedSquares.filter(sq => {
+                    const key = `${sq.row}-${sq.col}`;
+                    return boardData[key] !== undefined;
+                });
+                
+                if (alreadyClaimed.length > 0) {
+                    alert('⚠️ Some selected squares are already claimed. Only unclaimed squares will be assigned.\n\nTo mark squares as paid, use the "Mark Paid" button instead.\n\nAdmins can remove claimed squares using "Remove Selected".');
+                    // Filter out already claimed squares
+                    selectedSquares = selectedSquares.filter(sq => {
+                        const key = `${sq.row}-${sq.col}`;
+                        return boardData[key] === undefined;
+                    });
+                    
+                    if (selectedSquares.length === 0) {
+                        clearSelection();
+                        return;
+                    }
+                }
+            }
+            
             showLoading(`Claiming ${selectedSquares.length} square(s)...`);
             
             for (const sq of selectedSquares) {
                 const key = `${sq.row}-${sq.col}`;
-                boardData[key] = { name, paid: false };
+                // Only allow admin to overwrite claimed squares
+                if (!boardData[key] || isAdminLoggedIn) {
+                    boardData[key] = { name, paid: boardData[key] ? boardData[key].paid : false };
+                }
             }
             
             await saveBoard();
