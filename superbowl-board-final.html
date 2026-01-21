@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Bowl Squares Board</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            height: 100%;
+            min-height: 1800px;
+            overflow-y: auto;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: white;
+            padding: 10px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            min-height: 1700px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #1e3c72;
+            margin: 10px 0 5px 0;
+            font-size: 1.4em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 0.85em;
+        }
+        
+        .setup-box {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #ff9800;
+        }
+        
+        .setup-box h2 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .setup-box ol {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+        
+        .setup-box input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        
+        .setup-box button {
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .stat-card {
+            background: #667eea;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-align: center;
+            min-width: 110px;
+        }
+        
+        .stat-card .label {
+            font-size: 0.75em;
+            opacity: 0.9;
+        }
+        
+        .stat-card .value {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin: 10px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        input[type="text"], input[type="password"] {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+        
+        button {
+            padding: 8px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background: #5568d3;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        button.secondary {
+            background: #11998e;
+        }
+        
+        button.danger {
+            background: #eb3349;
+        }
+        
+        button.admin {
+            background: #ff6b6b;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 10px 0;
+            font-size: 0.8em;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .legend-box {
+            width: 22px;
+            height: 22px;
+            border-radius: 3px;
+            border: 2px solid #ddd;
+        }
+        
+        .board-wrapper {
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        
+        table {
+            border-collapse: collapse;
+            margin: 0 auto;
+            background: white;
+            width: 100%;
+            max-width: 850px;
+        }
+        
+        td, th {
+            border: 2px solid #ccc;
+            text-align: center;
+            width: 65px;
+            height: 65px;
+            font-size: 0.7em;
+            padding: 3px;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+        
+        th.corner {
+            background: #2a5298;
+            font-size: 0.65em;
+        }
+        
+        td.square {
+            cursor: pointer;
+            background: white;
+            transition: background 0.2s;
+        }
+        
+        td.square:hover {
+            background: #f0f0f0;
+        }
+        
+        td.square.claimed {
+            background: #38ef7d;
+            color: white;
+            font-weight: bold;
+        }
+        
+        td.square.paid {
+            background: #f5576c;
+            color: white;
+            font-weight: bold;
+        }
+        
+        td.square.selected {
+            outline: 4px solid #1e3c72;
+            outline-offset: -4px;
+            background: #e3f2fd;
+        }
+        
+        td.row-label {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+        
+        .participants {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .participants h2 {
+            color: #1e3c72;
+            margin-bottom: 8px;
+            font-size: 1em;
+        }
+        
+        .participant-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 8px;
+        }
+        
+        .participant {
+            padding: 8px;
+            background: white;
+            border-radius: 3px;
+            border-left: 3px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+        }
+        
+        .participant.paid {
+            border-left-color: #f5576c;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .loading-overlay.show {
+            display: flex;
+        }
+        
+        .loading-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .admin-logged-in {
+            background: #d4edda;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            text-align: center;
+            border: 2px solid #28a745;
+            color: #155724;
+            font-weight: bold;
+        }
+        
+        .winner-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #28a745;
+        }
+        
+        .winner-card h4 {
+            color: #155724;
+            margin-bottom: 8px;
+            font-size: 1em;
+        }
+        
+        .winner-card .score {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #1e3c72;
+            margin-bottom: 8px;
+        }
+        
+        .winner-card .winner-name {
+            font-size: 1.1em;
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .admin-section {
+            margin-top: 15px;
+            padding: 12px;
+            background: #fff3cd;
+            border-radius: 5px;
+            border-left: 4px solid #ff6b6b;
+        }
+        
+        .admin-section h3 {
+            color: #721c24;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+        
+        .spacer {
+            height: 50px;
+        }
+        
+        #mainBoard {
+            display: none;
+        }
+        
+        #mainBoard.ready {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏈 Super Bowl Squares Board 🏈</h1>
+        <p class="subtitle">$5 per Square | 50/50 Payout: Half to Winners, Half to Charity</p>
+        
+        <div id="setupSection" class="setup-box">
+            <h2>⚙️ Quick Setup (One-Time Only)</h2>
+            <p>This board needs a simple database to share data. Follow these 3 easy steps:</p>
+            <ol>
+                <li>Go to <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> and click "Sign up for free"</li>
+                <li>After signing up, go to "API Keys" tab and copy your "X-Master-Key"</li>
+                <li>Paste your API key below and click "Initialize Board"</li>
+            </ol>
+            <input type="text" id="apiKeyInput" placeholder="Paste your JSONBin API key here (looks like: $2a$10...)">
+            <input type="password" id="adminPasswordInput" placeholder="Set your admin password (for admin functions)" value="superbowl2025">
+            <button onclick="initializeDatabase()">Initialize Board</button>
+            <p style="margin-top: 10px; font-size: 0.85em; color: #666;">
+                <strong>Note:</strong> After initialization, you'll get a BIN ID. Save it! You can add both the API key and BIN ID to the HTML file for permanent setup.
+            </p>
+        </div>
+        
+        <div id="mainBoard">
+            <!-- Loading Overlay -->
+            <div id="loadingOverlay" class="loading-overlay">
+                <div class="loading-content">
+                    <div class="loading-spinner"></div>
+                    <div id="loadingMessage" style="font-size: 1.1em; color: #333;">Processing...</div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 10px;">
+                <button onclick="toggleRules()" style="background: #28a745;">📋 View Rules</button>
+            </div>
+            
+            <div id="rulesSection" style="display: none; background: #e7f3ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #2196F3;">
+                <h2 style="color: #1565C0; margin-bottom: 10px; font-size: 1.1em;">Game Rules</h2>
+                <div style="line-height: 1.8; font-size: 0.9em;">
+                    <p><strong>How to Play:</strong></p>
+                    <ul style="margin-left: 20px; margin-bottom: 10px;">
+                        <li>Each square costs $5</li>
+                        <li>Click squares to select them (you can select multiple!)</li>
+                        <li>Enter your name and click "Claim Selected" to claim all at once</li>
+                        <li>After all 100 squares are filled, numbers will be randomly assigned</li>
+                    </ul>
+                    
+                    <p><strong>How to Win:</strong></p>
+                    <ul style="margin-left: 20px; margin-bottom: 10px;">
+                        <li>Winners determined at <strong>end of each quarter</strong> (1st, 2nd, 3rd, Final)</li>
+                        <li>Look at the <strong>last digit</strong> of each team's score</li>
+                        <li>Find where those numbers intersect - that's the winning square!</li>
+                        <li>Each quarter winner receives <strong>$62.50</strong></li>
+                    </ul>
+                    
+                    <p><strong>Payout Structure (50/50):</strong></p>
+                    <ul style="margin-left: 20px; margin-bottom: 10px;">
+                        <li>Total pot: <strong>$500</strong></li>
+                        <li>Winners receive: <strong>$250 total</strong> ($62.50 per quarter)</li>
+                        <li>Charity receives: <strong>$250 total</strong></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div id="statusBar" class="status loading">⏳ Loading...</div>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="label">Claimed</div>
+                    <div class="value" id="totalSquares">0/100</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Paid</div>
+                    <div class="value" id="squaresPaid">0/100</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Total Collected</div>
+                    <div class="value" id="totalMoney">$0/$500</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">To Winners</div>
+                    <div class="value" id="winnerMoney">$0/$250</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">To Charity</div>
+                    <div class="value" id="charityMoney">$0/$250</div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <input type="text" id="nameInput" placeholder="Enter your name" style="width: 200px;">
+                <button onclick="claimSquares()">Claim Selected (<span id="selectedCount">0</span>)</button>
+                <button class="secondary" onclick="togglePaid()">Mark Paid</button>
+                <button onclick="clearSelection()">Clear Selection</button>
+                <button onclick="refreshBoard()">🔄 Refresh</button>
+            </div>
+            
+            <p style="text-align: center; font-size: 0.85em; color: #666; margin: 10px 0;">
+                💡 Tip: Click multiple squares to select them, then claim all at once!
+            </p>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-box" style="background: white;"></div>
+                    <span>Available</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #38ef7d;"></div>
+                    <span>Claimed</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #f5576c;"></div>
+                    <span>Paid</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #e3f2fd; border: 2px solid #1e3c72;"></div>
+                    <span>Selected</span>
+                </div>
+            </div>
+            
+            <div class="board-wrapper">
+                <table id="board">
+                    <thead>
+                        <tr>
+                            <th class="corner"><span id="teamNameCorner"></span></th>
+                            <th id="t1-0">-</th>
+                            <th id="t1-1">-</th>
+                            <th id="t1-2">-</th>
+                            <th id="t1-3">-</th>
+                            <th id="t1-4">-</th>
+                            <th id="t1-5">-</th>
+                            <th id="t1-6">-</th>
+                            <th id="t1-7">-</th>
+                            <th id="t1-8">-</th>
+                            <th id="t1-9">-</th>
+                        </tr>
+                    </thead>
+                    <tbody id="boardBody"></tbody>
+                </table>
+            </div>
+            
+            <div class="participants">
+                <h2>Participants (<span id="participantCount">0</span>)</h2>
+                <div class="participant-grid" id="participantList"></div>
+            </div>
+            
+            <!-- PUBLIC: Scores and Winners Display -->
+            <div id="winnersSection" style="display: none; margin-top: 20px; padding: 15px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+                <h2 style="color: #155724; margin-bottom: 15px; font-size: 1.2em;">🏆 Quarter Winners & Scores</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+                    <div id="winner-q1" class="winner-card"></div>
+                    <div id="winner-q2" class="winner-card"></div>
+                    <div id="winner-q3" class="winner-card"></div>
+                    <div id="winner-final" class="winner-card"></div>
+                </div>
+            </div>
+            
+            <!-- Admin Login Section -->
+            <div id="adminLoginSection" style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ff9800; text-align: center;">
+                <h3 style="color: #856404; margin-bottom: 10px;">🔐 Admin Login</h3>
+                <p style="font-size: 0.85em; margin-bottom: 10px; color: #666;">Admin functions are hidden. Login to manage the board.</p>
+                <div style="display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                    <input type="password" id="adminLoginPassword" placeholder="Enter admin password" style="width: 250px;">
+                    <button onclick="adminLogin()" style="background: #ff9800;">Login as Admin</button>
+                </div>
+            </div>
+            
+            <!-- Admin Functions Section (Hidden until logged in) -->
+            <div id="adminFunctionsSection" style="display: none;">
+                <div class="admin-logged-in">
+                    ✅ Logged in as Admin | <button onclick="adminLogout()" style="background: none; border: none; color: #155724; text-decoration: underline; cursor: pointer; font-weight: bold;">Logout</button>
+                </div>
+                
+                <div class="admin-section">
+                    <h3>🔧 Board Management</h3>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
+                        <button class="admin" onclick="removeSquares()">Remove Selected</button>
+                        <button class="admin" onclick="randomizeNumbers()">Randomize Numbers</button>
+                        <button class="danger" onclick="resetBoard()">Reset Entire Board</button>
+                    </div>
+                    
+                    <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #ddd;">
+                        <h3 style="margin-bottom: 10px;">📊 Enter Quarter Scores</h3>
+                        <p style="font-size: 0.85em; margin-bottom: 10px; color: #666;">Enter scores to automatically determine winners. Winners and scores will be visible to all users.</p>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+                            <!-- 1st Quarter -->
+                            <div style="background: white; padding: 12px; border-radius: 5px; border: 2px solid #ddd;">
+                                <h4 style="margin-bottom: 8px; color: #1e3c72;">1st Quarter</h4>
+                                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px;">
+                                    <span style="font-size: 0.85em; width: 80px;" id="team1Label1">Team 1:</span>
+                                    <input type="number" id="q1team1" min="0" max="99" style="width: 60px; padding: 5px;" placeholder="0">
+                                </div>
+                                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                                    <span style="font-size: 0.85em; width: 80px;" id="team2Label1">Team 2:</span>
+                                    <input type="number" id="q1team2" min="0" max="99" style="width: 60px; padding: 5px;" placeholder="0">
+                                </div>
+                                <button class="admin" onclick="submitScore('q1')" style="width: 100%;">Submit Q1</button>
+                                <div id="q1winner" style="margin-top: 8px; font-weight: bold; color: #28a745; font-size: 0.85em;"></div>
+                            </div>
+                            
+                            <!-- 2nd Quarter / Halftime -->
+                            <div style="background: white; padding: 12px; border-radius: 5px; border: 2px solid #ddd;">
+                                <h4 style="margin-bottom: 8px; color: #1e3c72;">2nd Quarter (Halftime)</h4>
+                                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px;">
+                                    <span style="font-size: 0.85em; width: 80px;" id="team1Label2">Team 1:</span>
+                                    <input type="number" id="q2team1" min="0" max="99" style="width: 60px; padding: 5px;" placeholder="0">
+                                </div>
+                                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                                    <span style="font-size: 0.85em; width: 80px;" id="team2Label2">Team 2:</span>
+                                    <input type="number" id="q2team2" min="0" max="99" style="width: 60px; padding: 5px;" placeholder="0">
+                                </div>
+                                <button class="admin" onclick="submitScore('q2')" style="width: 100%;">Submit Q2</button>
+                                <div id="q2winner" style="margin-top: 8px; font-weight: bold; color: #28a745; font-size: 0.85em;"></div>
+                            </div>
+                            
+                            <!-- 3rd Quarter -->
+                            <div style="background: white; padding: 12px; border-radius: 5px; border: 2px solid #ddd;">
+                                <h4 style="margin-bottom: 8px; color: #1e3c72;">3rd Quarter</h4>
+                                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px;">
+                                    <span style="font-size: 0.85em; width: 80px;" id="team1Label3">Team 1:</span>
+                                    <input type="number" id="q3team1" min="0" max="99" style="width: 60px; padding: 5px;" placeholder="0">
+                                </div>
+                                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                                    <span style="font-size: 0.85em; width: 80px;" id="team2Label3">Team 2:</span>
+                                    <input type="number" id="q3team2" min="0" max="99" style="width: 60px; padding: 5px;" placeholder="0">
+                                </div>
+                                <button class="admin" onclick="submitScore('q3')" style="width: 100%;">Submit Q3</button>
+                                <div id="q3winner" style="margin-top: 8px; font-weight: bold; color: #28a745; font-size: 0.85em;"></div>
+                            </div>
+                            
+                            <!-- Final -->
+                            <div style="background: white; padding: 12px; border-radius: 5px; border: 2px solid #ddd;">
+                                <h4 style="margin-bottom: 8px; color: #1e3c72;">Final Score</h4>
+                                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px;">
+                                    <span style="font-size: 0.85em; width: 80px;" id="team1Label4">Team 1:</span>
+                                    <input type="number" id="finalteam1" min="0" max="99" style="width: 60px; padding: 5px;" placeholder="0">
+                                </div>
+                                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                                    <span style="font-size: 0.85em; width: 80px;" id="team2Label4">Team 2:</span>
+                                    <input type="number" id="finalteam2" min="0" max="99" style="width: 60px; padding: 5px;" placeholder="0">
+                                </div>
+                                <button class="admin" onclick="submitScore('final')" style="width: 100%;">Submit Final</button>
+                                <div id="finalwinner" style="margin-top: 8px; font-weight: bold; color: #28a745; font-size: 0.85em;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="spacer"></div>
+    </div>
+    
+    <script>
+        // ========================================
+        // PAGE PASSWORD PROTECTION
+        // ========================================
+        const PAGE_PASSWORD = 'football2025'; // Change this to your desired password
+        
+        // Check password on page load
+        (function() {
+            const isAuthenticated = sessionStorage.getItem('boardAuth') === 'true';
+            if (!isAuthenticated) {
+                const password = prompt('Enter password to access the Super Bowl Board:');
+                if (password !== PAGE_PASSWORD) {
+                    alert('Incorrect password. Access denied.');
+                    document.body.innerHTML = '<div style="text-align:center; padding:50px; font-family:Arial;"><h1>Access Denied</h1><p>Invalid password.</p></div>';
+                    throw new Error('Access denied');
+                }
+                sessionStorage.setItem('boardAuth', 'true');
+            }
+        })();
+        
+        // ========================================
+        // CONFIGURATION
+        // ========================================
+        let API_KEY = ''; // Your JSONBin API key
+        let BIN_ID = '';  // Your BIN ID
+        let ADMIN_PASSWORD = 'superbowl2025'; // Admin password
+        
+        // Team names - edit these for your Super Bowl teams
+        let TEAM1_NAME = 'Team 1'; // Top row team
+        let TEAM2_NAME = 'Team 2'; // Left column team
+        
+        const BASE_URL = 'https://api.jsonbin.io/v3';
+        
+        let boardData = {};
+        let selectedSquares = []; // Array for multi-select
+        let numbers = { team1: [], team2: [] };
+        let scores = {
+            q1: { team1: null, team2: null, winner: null },
+            q2: { team1: null, team2: null, winner: null },
+            q3: { team1: null, team2: null, winner: null },
+            final: { team1: null, team2: null, winner: null }
+        };
+        let isAdminLoggedIn = false;
+        
+        // ========================================
+        // LOADING SPINNER FUNCTIONS
+        // ========================================
+        function showLoading(message = 'Processing...') {
+            document.getElementById('loadingMessage').textContent = message;
+            document.getElementById('loadingOverlay').classList.add('show');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('show');
+        }
+        
+        // ========================================
+        // ADMIN LOGIN FUNCTIONS
+        // ========================================
+        function adminLogin() {
+            const password = document.getElementById('adminLoginPassword').value;
+            if (password === ADMIN_PASSWORD) {
+                isAdminLoggedIn = true;
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                document.getElementById('adminLoginSection').style.display = 'none';
+                document.getElementById('adminFunctionsSection').style.display = 'block';
+                document.getElementById('adminLoginPassword').value = '';
+                alert('✅ Logged in as admin!');
+            } else {
+                alert('❌ Incorrect admin password');
+            }
+        }
+        
+        function adminLogout() {
+            isAdminLoggedIn = false;
+            sessionStorage.removeItem('adminLoggedIn');
+            document.getElementById('adminLoginSection').style.display = 'block';
+            document.getElementById('adminFunctionsSection').style.display = 'none';
+        }
+        
+        // ========================================
+        // UTILITY FUNCTIONS
+        // ========================================
+        function toggleRules() {
+            const rules = document.getElementById('rulesSection');
+            rules.style.display = rules.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // ========================================
+        // DATABASE FUNCTIONS
+        // ========================================
+        window.onload = function() {
+            if (!API_KEY) API_KEY = localStorage.getItem('apiKey') || '';
+            if (!BIN_ID) BIN_ID = localStorage.getItem('binId') || '';
+            if (!ADMIN_PASSWORD) ADMIN_PASSWORD = localStorage.getItem('adminPassword') || 'superbowl2025';
+            
+            if (API_KEY && BIN_ID) {
+                document.getElementById('setupSection').style.display = 'none';
+                document.getElementById('mainBoard').classList.add('ready');
+                initBoard();
+            }
+        };
+        
+        async function initializeDatabase() {
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            const adminPwd = document.getElementById('adminPasswordInput').value.trim();
+            
+            if (!apiKey) {
+                alert('Please enter your JSONBin API key');
+                return;
+            }
+            
+            API_KEY = apiKey;
+            ADMIN_PASSWORD = adminPwd;
+            
+            showLoading('Initializing database...');
+            
+            try {
+                const response = await fetch(`${BASE_URL}/b`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': API_KEY
+                    },
+                    body: JSON.stringify({
+                        boardData: {},
+                        numbers: { team1: [], team2: [] },
+                        scores: {
+                            q1: { team1: null, team2: null, winner: null },
+                            q2: { team1: null, team2: null, winner: null },
+                            q3: { team1: null, team2: null, winner: null },
+                            final: { team1: null, team2: null, winner: null }
+                        },
+                        adminPassword: ADMIN_PASSWORD
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.metadata && result.metadata.id) {
+                    BIN_ID = result.metadata.id;
+                    
+                    localStorage.setItem('apiKey', API_KEY);
+                    localStorage.setItem('binId', BIN_ID);
+                    localStorage.setItem('adminPassword', ADMIN_PASSWORD);
+                    
+                    hideLoading();
+                    
+                    alert(`Success! Your board is ready!\n\nYour BIN ID: ${BIN_ID}\n\nOptional: Add these to the HTML file for permanent setup:\n\nAPI_KEY = '${API_KEY}';\nBIN_ID = '${BIN_ID}';\nADMIN_PASSWORD = '${ADMIN_PASSWORD}';`);
+                    
+                    document.getElementById('setupSection').style.display = 'none';
+                    document.getElementById('mainBoard').classList.add('ready');
+                    initBoard();
+                } else {
+                    hideLoading();
+                    alert('Error: ' + JSON.stringify(result));
+                }
+            } catch (error) {
+                hideLoading();
+                alert('Error initializing: ' + error.message);
+            }
+        }
+        
+        async function loadBoard() {
+            if (!API_KEY || !BIN_ID) return;
+            
+            document.getElementById('statusBar').innerHTML = '⏳ Loading...';
+            document.getElementById('statusBar').className = 'status loading';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/b/${BIN_ID}/latest`, {
+                    headers: {
+                        'X-Master-Key': API_KEY
+                    }
+                });
+                
+                const result = await response.json();
+                boardData = result.record.boardData || {};
+                numbers = result.record.numbers || { team1: [], team2: [] };
+                scores = result.record.scores || {
+                    q1: { team1: null, team2: null, winner: null },
+                    q2: { team1: null, team2: null, winner: null },
+                    q3: { team1: null, team2: null, winner: null },
+                    final: { team1: null, team2: null, winner: null }
+                };
+                
+                document.getElementById('statusBar').innerHTML = '✅ Connected';
+                document.getElementById('statusBar').className = 'status connected';
+                
+                updateBoard();
+                updateScoreDisplay();
+            } catch (error) {
+                document.getElementById('statusBar').innerHTML = '❌ Error: ' + error.message;
+                document.getElementById('statusBar').className = 'status error';
+            }
+        }
+        
+        async function saveBoard() {
+            if (!API_KEY || !BIN_ID) return false;
+            
+            try {
+                await fetch(`${BASE_URL}/b/${BIN_ID}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': API_KEY
+                    },
+                    body: JSON.stringify({
+                        boardData,
+                        numbers,
+                        scores,
+                        adminPassword: ADMIN_PASSWORD
+                    })
+                });
+                
+                await loadBoard();
+                return true;
+            } catch (error) {
+                alert('Error saving: ' + error.message);
+                return false;
+            }
+        }
+        
+        // ========================================
+        // BOARD INITIALIZATION
+        // ========================================
+        function initBoard() {
+            const tbody = document.getElementById('boardBody');
+            tbody.innerHTML = '';
+            
+            // Set team names
+            document.getElementById('teamNameCorner').innerHTML = `${TEAM1_NAME} →<br>↓ ${TEAM2_NAME}`;
+            
+            // Set team names in score labels
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`team1Label${i}`).textContent = `${TEAM1_NAME}:`;
+                document.getElementById(`team2Label${i}`).textContent = `${TEAM2_NAME}:`;
+            }
+            
+            // Create board
+            for (let row = 0; row < 10; row++) {
+                const tr = document.createElement('tr');
+                
+                const rowLabel = document.createElement('td');
+                rowLabel.className = 'row-label';
+                rowLabel.textContent = '-';
+                rowLabel.id = `t2-${row}`;
+                tr.appendChild(rowLabel);
+                
+                for (let col = 0; col < 10; col++) {
+                    const td = document.createElement('td');
+                    td.className = 'square';
+                    td.dataset.row = row;
+                    td.dataset.col = col;
+                    td.onclick = () => selectSquare(row, col);
+                    tr.appendChild(td);
+                }
+                
+                tbody.appendChild(tr);
+            }
+            
+            // Check if admin was logged in
+            if (sessionStorage.getItem('adminLoggedIn') === 'true') {
+                isAdminLoggedIn = true;
+                document.getElementById('adminLoginSection').style.display = 'none';
+                document.getElementById('adminFunctionsSection').style.display = 'block';
+            }
+            
+            loadBoard();
+        }
+        
+        // ========================================
+        // SQUARE SELECTION (MULTI-SELECT)
+        // ========================================
+        function selectSquare(row, col) {
+            const key = `${row}-${col}`;
+            const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            
+            // Can't select claimed squares
+            if (boardData[key]) {
+                document.getElementById('nameInput').value = boardData[key].name;
+                return;
+            }
+            
+            // Toggle selection
+            const index = selectedSquares.findIndex(s => s.row === row && s.col === col);
+            if (index > -1) {
+                selectedSquares.splice(index, 1);
+                square.classList.remove('selected');
+            } else {
+                selectedSquares.push({ row, col });
+                square.classList.add('selected');
+            }
+            
+            document.getElementById('selectedCount').textContent = selectedSquares.length;
+        }
+        
+        function clearSelection() {
+            selectedSquares.forEach(sq => {
+                const square = document.querySelector(`[data-row="${sq.row}"][data-col="${sq.col}"]`);
+                if (square) square.classList.remove('selected');
+            });
+            selectedSquares = [];
+            document.getElementById('selectedCount').textContent = '0';
+        }
+        
+        // ========================================
+        // CLAIMING SQUARES
+        // ========================================
+        async function claimSquares() {
+            if (selectedSquares.length === 0) {
+                alert('Please select at least one square');
+                return;
+            }
+            
+            const name = document.getElementById('nameInput').value.trim();
+            if (!name) {
+                alert('Please enter your name');
+                return;
+            }
+            
+            showLoading(`Claiming ${selectedSquares.length} square(s)...`);
+            
+            for (const sq of selectedSquares) {
+                const key = `${sq.row}-${sq.col}`;
+                boardData[key] = { name, paid: false };
+            }
+            
+            await saveBoard();
+            hideLoading();
+            
+            document.getElementById('nameInput').value = '';
+            clearSelection();
+        }
+        
+        async function togglePaid() {
+            if (selectedSquares.length === 0) {
+                alert('Please select at least one square');
+                return;
+            }
+            
+            showLoading('Updating payment status...');
+            
+            for (const sq of selectedSquares) {
+                const key = `${sq.row}-${sq.col}`;
+                if (boardData[key]) {
+                    boardData[key].paid = !boardData[key].paid;
+                }
+            }
+            
+            await saveBoard();
+            hideLoading();
+            clearSelection();
+        }
+        
+        // ========================================
+        // ADMIN FUNCTIONS
+        // ========================================
+        async function removeSquares() {
+            if (selectedSquares.length === 0) {
+                alert('Please select at least one square');
+                return;
+            }
+            
+            const squareNames = selectedSquares.map(sq => {
+                const key = `${sq.row}-${sq.col}`;
+                return boardData[key] ? boardData[key].name : 'empty';
+            }).filter(name => name !== 'empty');
+            
+            if (squareNames.length === 0) {
+                alert('Selected squares are not claimed');
+                return;
+            }
+            
+            if (!confirm(`Remove ${squareNames.join(', ')} from ${selectedSquares.length} square(s)?`)) {
+                return;
+            }
+            
+            showLoading('Removing squares...');
+            
+            for (const sq of selectedSquares) {
+                const key = `${sq.row}-${sq.col}`;
+                delete boardData[key];
+            }
+            
+            await saveBoard();
+            hideLoading();
+            clearSelection();
+        }
+        
+        async function randomizeNumbers() {
+            if (!confirm('Randomize numbers? Only do this once all squares are filled!')) {
+                return;
+            }
+            
+            showLoading('Randomizing numbers...');
+            
+            const nums = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+            numbers.team1 = [...nums].sort(() => Math.random() - 0.5);
+            numbers.team2 = [...nums].sort(() => Math.random() - 0.5);
+            
+            await saveBoard();
+            hideLoading();
+            alert('Numbers randomized! Board is ready for the game.');
+        }
+        
+        async function resetBoard() {
+            if (!confirm('RESET ALL DATA? This will clear all squares, numbers, AND scores!')) {
+                return;
+            }
+            
+            showLoading('Resetting board...');
+            
+            boardData = {};
+            numbers = { team1: [], team2: [] };
+            scores = {
+                q1: { team1: null, team2: null, winner: null },
+                q2: { team1: null, team2: null, winner: null },
+                q3: { team1: null, team2: null, winner: null },
+                final: { team1: null, team2: null, winner: null }
+            };
+            
+            for (let i = 0; i < 10; i++) {
+                document.getElementById(`t1-${i}`).textContent = '-';
+                document.getElementById(`t2-${i}`).textContent = '-';
+            }
+            
+            ['q1', 'q2', 'q3', 'final'].forEach(quarter => {
+                document.getElementById(`${quarter}team1`).value = '';
+                document.getElementById(`${quarter}team2`).value = '';
+                document.getElementById(`${quarter}winner`).innerHTML = '';
+            });
+            
+            await saveBoard();
+            hideLoading();
+        }
+        
+        function refreshBoard() {
+            loadBoard();
+        }
+        
+        // ========================================
+        // SCORE SUBMISSION
+        // ========================================
+        async function submitScore(quarter) {
+            if (!numbers.team1 || numbers.team1.length !== 10 || !numbers.team2 || numbers.team2.length !== 10) {
+                alert('Please randomize numbers before entering scores!');
+                return;
+            }
+            
+            const team1Score = parseInt(document.getElementById(`${quarter}team1`).value);
+            const team2Score = parseInt(document.getElementById(`${quarter}team2`).value);
+            
+            if (isNaN(team1Score) || isNaN(team2Score)) {
+                alert('Please enter valid scores');
+                return;
+            }
+            
+            showLoading('Determining winner...');
+            
+            const team1Digit = team1Score % 10;
+            const team2Digit = team2Score % 10;
+            
+            const team1Index = numbers.team1.indexOf(team1Digit);
+            const team2Index = numbers.team2.indexOf(team2Digit);
+            
+            const winningKey = `${team2Index}-${team1Index}`;
+            const winnerData = boardData[winningKey];
+            
+            scores[quarter] = {
+                team1: team1Score,
+                team2: team2Score,
+                winner: winnerData ? winnerData.name : 'Unclaimed Square',
+                winningSquare: `${TEAM1_NAME}: ${team1Digit}, ${TEAM2_NAME}: ${team2Digit}`
+            };
+            
+            await saveBoard();
+            hideLoading();
+            
+            const quarterName = quarter === 'final' ? 'Final' : quarter.toUpperCase();
+            alert(`${quarterName} winner: ${scores[quarter].winner} - $62.50!`);
+        }
+        
+        function updateScoreDisplay() {
+            let hasWinners = false;
+            
+            ['q1', 'q2', 'q3', 'final'].forEach(quarter => {
+                if (scores[quarter] && scores[quarter].team1 !== null) {
+                    hasWinners = true;
+                    
+                    const quarterName = quarter === 'final' ? 'Final' : 
+                                       quarter === 'q1' ? '1st Quarter' :
+                                       quarter === 'q2' ? '2nd Quarter (Halftime)' :
+                                       '3rd Quarter';
+                    
+                    document.getElementById(`${quarter}team1`).value = scores[quarter].team1;
+                    document.getElementById(`${quarter}team2`).value = scores[quarter].team2;
+                    
+                    document.getElementById(`${quarter}winner`).innerHTML = 
+                        `✅ Winner: <strong>${scores[quarter].winner}</strong><br>${scores[quarter].winningSquare}`;
+                    
+                    document.getElementById(`winner-${quarter}`).innerHTML = `
+                        <h4>${quarterName}</h4>
+                        <div class="score">${TEAM1_NAME}: ${scores[quarter].team1} - ${TEAM2_NAME}: ${scores[quarter].team2}</div>
+                        <div class="winner-name">🏆 ${scores[quarter].winner} - $62.50</div>
+                        <div style="font-size: 0.85em; color: #666; margin-top: 5px;">${scores[quarter].winningSquare}</div>
+                    `;
+                }
+            });
+            
+            document.getElementById('winnersSection').style.display = hasWinners ? 'block' : 'none';
+        }
+        
+        // ========================================
+        // BOARD UPDATE
+        // ========================================
+        function updateBoard() {
+            let totalClaimed = 0;
+            let totalPaid = 0;
+            
+            // Update numbers
+            if (numbers.team1 && numbers.team1.length === 10) {
+                numbers.team1.forEach((num, idx) => {
+                    document.getElementById(`t1-${idx}`).textContent = num;
+                });
+            } else {
+                for (let i = 0; i < 10; i++) {
+                    document.getElementById(`t1-${i}`).textContent = '-';
+                }
+            }
+            
+            if (numbers.team2 && numbers.team2.length === 10) {
+                numbers.team2.forEach((num, idx) => {
+                    document.getElementById(`t2-${idx}`).textContent = num;
+                });
+            } else {
+                for (let i = 0; i < 10; i++) {
+                    document.getElementById(`t2-${i}`).textContent = '-';
+                }
+            }
+            
+            // Update squares
+            for (let row = 0; row < 10; row++) {
+                for (let col = 0; col < 10; col++) {
+                    const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                    if (!square) continue;
+                    
+                    const key = `${row}-${col}`;
+                    
+                    if (boardData[key]) {
+                        totalClaimed++;
+                        square.textContent = boardData[key].name;
+                        square.className = 'square ' + (boardData[key].paid ? 'paid' : 'claimed');
+                        if (boardData[key].paid) totalPaid++;
+                    } else {
+                        square.textContent = '';
+                        square.className = 'square';
+                    }
+                    
+                    // Re-apply selection
+                    if (selectedSquares.some(s => s.row === row && s.col === col)) {
+                        square.classList.add('selected');
+                    }
+                }
+            }
+            
+            document.getElementById('totalSquares').textContent = `${totalClaimed}/100`;
+            document.getElementById('squaresPaid').textContent = `${totalPaid}/100`;
+            document.getElementById('totalMoney').textContent = `$${totalPaid * 5}/$500`;
+            
+            const totalCollected = totalPaid * 5;
+            const halfAmount = Math.floor(totalCollected / 2);
+            document.getElementById('winnerMoney').textContent = `$${halfAmount}/$250`;
+            document.getElementById('charityMoney').textContent = `$${halfAmount}/$250`;
+            
+            updateParticipantList();
+        }
+        
+        function updateParticipantList() {
+            const participants = {};
+            
+            Object.values(boardData).forEach(data => {
+                if (!participants[data.name]) {
+                    participants[data.name] = { claimed: 0, paid: 0 };
+                }
+                participants[data.name].claimed++;
+                if (data.paid) participants[data.name].paid++;
+            });
+            
+            const list = document.getElementById('participantList');
+            list.innerHTML = '';
+            
+            const sorted = Object.entries(participants).sort((a, b) => b[1].claimed - a[1].claimed);
+            
+            sorted.forEach(([name, stats]) => {
+                const div = document.createElement('div');
+                div.className = 'participant' + (stats.paid === stats.claimed && stats.claimed > 0 ? ' paid' : '');
+                div.innerHTML = `
+                    <span><strong>${name}</strong></span>
+                    <span>${stats.claimed} sq (${stats.paid} paid)</span>
+                `;
+                list.appendChild(div);
+            });
+            
+            document.getElementById('participantCount').textContent = sorted.length;
+        }
+        
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            if (API_KEY && BIN_ID) loadBoard();
+        }, 30000);
+    </script>
+</body>
+</html>
