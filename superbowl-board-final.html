@@ -682,8 +682,8 @@
         // ========================================
         // CONFIGURATION
         // ========================================
-        let API_KEY = ''; // Your JSONBin API key
-        let BIN_ID = '';  // Your BIN ID
+        let API_KEY = '$2a$10$4X2nAN06EmA87/Tb6mz3NOP9vdVRqisYHNuqj48mhLi/C6IV6Ac4m'; // Your JSONBin API key
+        let BIN_ID = '6970ee3ed0ea881f407ad91c';  // Your BIN ID
         let ADMIN_PASSWORD = 'superbowl2025'; // Admin password
         
         // Team names - edit these for your Super Bowl teams
@@ -937,10 +937,9 @@
             const key = `${row}-${col}`;
             const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
             
-            // Can't select claimed squares
+            // If square is claimed, auto-fill name but still allow selection
             if (boardData[key]) {
                 document.getElementById('nameInput').value = boardData[key].name;
-                return;
             }
             
             // Toggle selection
